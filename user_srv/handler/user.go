@@ -78,3 +78,20 @@ func (s *UserService) GetUserByMobile(ctx context.Context, req *proto.MobileRequ
 	userInfoRsp := ModelToResponse(user)
 	return &userInfoRsp, nil
 }
+
+func (s *UserService) GetUserById(ctx context.Context, req *proto.IdRequest) (*proto.UserInfoResponse, error) {
+	var user model.User
+	result := global.DB.First(&user, req.Id)
+	//没有这个用户
+	if result.RowsAffected == 0 {
+		return nil, status.Errorf(codes.NotFound, "用户不存在")
+	}
+	//查询报错
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	//找到用户
+	userInfoRsp := ModelToResponse(user)
+	return &userInfoRsp, nil
+
+}
