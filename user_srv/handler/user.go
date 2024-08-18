@@ -62,7 +62,7 @@ func (s *UserService) GetUserList(ctx context.Context, req *proto.PageInfo) (*pr
 	}
 	rsp := &proto.UserListResponse{}
 	rsp.Total = int32(result.RowsAffected)
-	global.DB.Scopes(Paginate(int(req.Pn), int(req.PSize))).Find(users)
+	global.DB.Scopes(Paginate(int(req.Pn), int(req.PSize))).Find(&users) //必须传&地址进去，否则报错，panic: reflect: reflect.Value.SetLen using unaddressable value
 	for _, user := range users {
 		userInfoRsp := ModelToResponse(user)
 		rsp.Data = append(rsp.Data, &userInfoRsp)
