@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"crypto/sha512"
+	"fmt"
+	"github.com/anaskhan96/go-password-encoder"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
@@ -32,7 +35,7 @@ func ModelToResponse(user model.User) proto.UserInfoResponse {
 	userInfoRsp := proto.UserInfoResponse{
 		Id:       user.ID,
 		Password: user.Password,
-		Nickname: user.NiceName,
+		Nickname: user.NickName,
 		Gender:   user.Gender,
 		Role:     user.Role,
 	}
@@ -93,5 +96,24 @@ func (s *UserService) GetUserById(ctx context.Context, req *proto.IdRequest) (*p
 	//找到用户
 	userInfoRsp := ModelToResponse(user)
 	return &userInfoRsp, nil
+}
 
+func (s *UserService) CreateUser(ctx context.Context, req *proto.CreatUserInfo) (*proto.UserInfoResponse, error) {
+	//新建用户
+	var user model.User
+	user.Mobile = req.Mobile
+	result := global.DB.Where(&model.User{Mobile: req.Mobile}).First(&user)
+	//用户已存在
+	if result.RowsAffected == 1 {
+		return nil, status.Errorf(codes.AlreadyExists, "用户已存在")
+	}
+	//用户不存在则新建
+	user.NickName = req.Nickname
+	options := &password.Options{16, 100, 32, sha512.New}
+	salt, encodePwd := password.Encode(req.PassWord, options)
+	user.Password = fmt.Sprintf("$pbkdf2-sha512$%s$%s", salt, encodePwd)
+	global.DB.Create(&user)
+	userInfoRsp := ModelToResponse(user)
+	userInfoRsp.Password = ""
+	return &userInfoRsp, nil
 }
