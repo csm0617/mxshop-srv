@@ -5,9 +5,13 @@ import (
 	"crypto/sha512"
 	"fmt"
 	"github.com/anaskhan96/go-password-encoder"
+	"github.com/golang/protobuf/ptypes/empty"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
+	"strings"
+	"time"
 
 	"mxshop_srvs/user_srv/global"
 	"mxshop_srvs/user_srv/model"
@@ -112,8 +116,42 @@ func (s *UserService) CreateUser(ctx context.Context, req *proto.CreatUserInfo) 
 	options := &password.Options{16, 100, 32, sha512.New}
 	salt, encodePwd := password.Encode(req.PassWord, options)
 	user.Password = fmt.Sprintf("$pbkdf2-sha512$%s$%s", salt, encodePwd)
-	global.DB.Create(&user)
+	result = global.DB.Create(&user)
+	if result.Error != nil {
+		return nil, status.Errorf(codes.Internal, result.Error.Error())
+	}
 	userInfoRsp := ModelToResponse(user)
 	userInfoRsp.Password = ""
 	return &userInfoRsp, nil
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, req *proto.UpdateUserInfo) (*emptypb.Empty, error) {
+	var user model.User
+	result := global.DB.First(&user, req.Id)
+	if result.RowsAffected == 0 {
+		return nil, status.Errorf(codes.NotFound, "用户不存在")
+	}
+	//此时已经找到用户了，user也被赋值了，只需要修改能修改的
+	user.NickName = req.NickName
+	user.Gender = req.Gender
+	//把uint64转int64后再转成time
+	birthday := time.Unix(int64(req.Birthday), 0)
+	user.Birthday = &birthday
+	//更新用户
+	result = global.DB.Save(&user)
+	if result.Error != nil {
+		return nil, status.Errorf(codes.Internal, result.Error.Error())
+	}
+	return &empty.Empty{}, nil
+}
+
+func (s *UserService) CheckPassword(ctx context.Context, req *proto.PasswordCheckInfo) (*proto.CheckResponse, error) {
+	//加密规则
+	options := &password.Options{16, 100, 32, sha512.New}
+	//req.EncryptedPassword是加密后的密码
+	passwordInfo := strings.Split(req.EncryptedPassword, "$")
+	//req.Password 原始密码
+	verify := password.Verify(req.Password, passwordInfo[2], passwordInfo[3], options)
+
+	return &proto.CheckResponse{Success: verify}, nil
 }
