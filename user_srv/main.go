@@ -34,9 +34,9 @@ func main() {
 	//service := handler.UserService{}
 	//for i := 0; i < 10; i++ {
 	//	user, err := service.CreateUser(context.Background(), &proto.CreatUserInfo{
-	//		Nickname: "user_" + strconv.Itoa(i),
+	//		Nickname: "name_" + strconv.Itoa(i),
 	//		PassWord: "12345" + strconv.Itoa(i),
-	//		Mobile:   "1937211793" + strconv.Itoa(i),
+	//		Mobile:   "1937211791" + strconv.Itoa(i),
 	//	})
 	//	if err != nil {
 	//		fmt.Println("CreateUser error:", err)

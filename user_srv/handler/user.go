@@ -42,6 +42,7 @@ func ModelToResponse(user model.User) proto.UserInfoResponse {
 		Nickname: user.NickName,
 		Gender:   user.Gender,
 		Role:     user.Role,
+		Mobile:   user.Mobile,
 	}
 	if user.Birthday != nil {
 		userInfoRsp.BirthDay = uint64(user.Birthday.Unix())
@@ -113,6 +114,8 @@ func (s *UserService) CreateUser(ctx context.Context, req *proto.CreatUserInfo) 
 	}
 	//用户不存在则新建
 	user.NickName = req.Nickname
+	now := time.Now()
+	user.Birthday = &now
 	options := &password.Options{16, 100, 32, sha512.New}
 	salt, encodePwd := password.Encode(req.PassWord, options)
 	user.Password = fmt.Sprintf("$pbkdf2-sha512$%s$%s", salt, encodePwd)
