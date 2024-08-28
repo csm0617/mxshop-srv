@@ -27,7 +27,9 @@ func InitDB() {
 		global.ServerConfig.MysqlInfo.User,
 		global.ServerConfig.MysqlInfo.Password,
 		global.ServerConfig.MysqlInfo.Host,
-		global.ServerConfig.MysqlInfo.Port)
+		global.ServerConfig.MysqlInfo.Port,
+		global.ServerConfig.MysqlInfo.Name,
+	)
 	var err error
 	global.DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{
 		Logger: newLogger,
